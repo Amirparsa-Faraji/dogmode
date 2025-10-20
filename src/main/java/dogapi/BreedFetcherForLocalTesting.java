@@ -5,7 +5,7 @@ import java.util.List;
 /**
  * A minimal implementation of the BreedFetcher interface for testing purposes.
  * To avoid excessive calls to the real API, we can primarily test with a local
- * implementation that demonstrates the basic functionality of the interface.
+ * implementation that demonstrates the basic functionality of the interface
  */
 public class BreedFetcherForLocalTesting implements BreedFetcher {
     private int callCount = 0;
