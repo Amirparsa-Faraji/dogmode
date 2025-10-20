@@ -1,6 +1,9 @@
 package dogapi;
 
 import java.util.List;
+// Option A: qualify inline (no extra import)
+// Option B: uncomment this import and then you can use just `BreedNotFoundException`
+// import dogapi.BreedFetcher.BreedNotFoundException;
 
 /**
  * A minimal implementation of the BreedFetcher interface for testing purposes.
@@ -11,12 +14,12 @@ public class BreedFetcherForLocalTesting implements BreedFetcher {
     private int callCount = 0;
 
     @Override
-    public List<String> getSubBreeds(String breed) {
+    public List<String> getSubBreeds(String breed) throws BreedFetcher.BreedNotFoundException {
         callCount++;
         if ("hound".equalsIgnoreCase(breed)) {
             return List.of("afghan", "basset");
         }
-        throw new BreedNotFoundException(breed);
+        throw new BreedFetcher.BreedNotFoundException(breed);
     }
 
     public int getCallCount() {
