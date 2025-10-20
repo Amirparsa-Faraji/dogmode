@@ -1,31 +1,57 @@
 package dogapi;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.Map;
 
 /**
- * This BreedFetcher caches fetch request results to improve performance and
- * lessen the load on the underlying data source. An implementation of BreedFetcher
- * must be provided. The number of calls to the underlying fetcher are recorded.
- *
- * If a call to getSubBreeds produces a BreedNotFoundException, then it is NOT cached
- * in this implementation. The provided tests check for this behaviour.
- *
- * The cache maps the name of a breed to its list of sub breed names.
+ * Cache wrapper for a BreedFetcher. Successful lookups are cached
+ * (including "no sub-breeds" as an empty list). Failures are never cached.
  */
 public class CachingBreedFetcher implements BreedFetcher {
-    // TODO Task 2: Complete this class
-    private int callsMade = 0;
-    public CachingBreedFetcher(BreedFetcher fetcher) {
 
+    private final BreedFetcher upstream;
+    private final Map<String, List<String>> cache = new ConcurrentHashMap<>();
+    private int callsMade = 0;
+
+    public CachingBreedFetcher(BreedFetcher fetcher) {
+        this.upstream = Objects.requireNonNull(fetcher, "fetcher must not be null");
     }
 
     @Override
-    public List<String> getSubBreeds(String breed) {
-        // return statement included so that the starter code can compile and run.
-        return new ArrayList<>();
+    public List<String> getSubBreeds(String breed) throws BreedNotFoundException {
+        final String k = normalize(breed);
+        final List<String> cached = cache.get(k);
+        if (cached != null) {
+            return new ArrayList<>(cached);
+        }
+        callsMade++;
+        final List<String> fetched;
+        try {
+            fetched = upstream.getSubBreeds(breed);
+        } catch (BreedNotFoundException e) {
+            throw e;
+        }
+        final List<String> s =
+                (fetched == null || fetched.isEmpty())
+                        ? Collections.emptyList()
+                        : Collections.unmodifiableList(new ArrayList<>(fetched));
+
+        cache.put(k, s);
+        return new ArrayList<>(s);
     }
 
     public int getCallsMade() {
         return callsMade;
+    }
+
+    private static String normalize(String breed) throws BreedNotFoundException {
+        if (breed == null) throw new BreedNotFoundException("null");
+        final String trimmed = breed.trim();
+        if (trimmed.isEmpty()) throw new BreedNotFoundException(breed);
+        return trimmed.toLowerCase();
     }
 }
